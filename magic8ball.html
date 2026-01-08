@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic 8-Ball</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Georgia', serif;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #e94560;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+            font-size: 2.5rem;
+        }
+
+        .ball-container {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        .ball-container:hover {
+            transform: scale(1.02);
+        }
+
+        .ball {
+            width: 300px;
+            height: 300px;
+            background: 
+                /* Main highlight - positioned properly on the ball surface */
+                radial-gradient(ellipse 70px 35px at 30% 22%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.15) 50%, transparent 80%),
+                /* Sharp specular highlight */
+                radial-gradient(ellipse 20px 12px at 25% 15%, rgba(255,255,255,0.7) 0%, transparent 70%),
+                /* Secondary softer highlight */
+                radial-gradient(ellipse 100px 50px at 35% 30%, rgba(255,255,255,0.1) 0%, transparent 60%),
+                /* Rim light on bottom right */
+                radial-gradient(ellipse 80px 40px at 75% 80%, rgba(80,80,90,0.3) 0%, transparent 60%),
+                /* Core gradient - the main ball shape with better depth */
+                radial-gradient(circle at 35% 30%, #4a4a4a 0%, #2a2a2a 20%, #1a1a1a 40%, #0a0a0a 65%, #000000 100%);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 
+                /* Main drop shadow */
+                0 30px 60px rgba(0, 0, 0, 0.7),
+                0 15px 30px rgba(0, 0, 0, 0.5),
+                /* Subtle ambient occlusion */
+                0 5px 15px rgba(0, 0, 0, 0.3),
+                /* Inner depth shadows */
+                inset 0 -25px 50px rgba(0, 0, 0, 0.6);
+            position: relative;
+        }
+
+        .window {
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle at 50% 50%, #1e3a8a 0%, #1e2a5e 40%, #0d1442 100%);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 
+                inset 0 8px 25px rgba(0, 0, 0, 0.9),
+                inset 0 -5px 15px rgba(30, 58, 138, 0.3),
+                0 0 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .triangle-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            top: 0;
+            left: 0;
+        }
+
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 45px solid transparent;
+            border-right: 45px solid transparent;
+            border-bottom: 80px solid #1e3a8a;
+            filter: drop-shadow(0 0 8px rgba(63, 81, 181, 0.4));
+            position: relative;
+        }
+
+        .content-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            top: 0;
+            left: 0;
+        }
+
+        .answer {
+            position: absolute;
+            color: #fff;
+            font-size: 13px;
+            text-align: center;
+            width: 80px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            line-height: 1.3;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            font-weight: bold;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease;
+        }
+
+        .answer.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .eight {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 55px;
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease;
+        }
+
+        .eight.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            5% { transform: translate(-8px, -4px) rotate(-3deg); }
+            10% { transform: translate(7px, 3px) rotate(2.5deg); }
+            15% { transform: translate(-9px, 5px) rotate(-4deg); }
+            20% { transform: translate(8px, -6px) rotate(3deg); }
+            25% { transform: translate(-6px, 7px) rotate(-2deg); }
+            30% { transform: translate(9px, -4px) rotate(4deg); }
+            35% { transform: translate(-7px, -5px) rotate(-3deg); }
+            40% { transform: translate(6px, 6px) rotate(2deg); }
+            45% { transform: translate(-8px, 3px) rotate(-2.5deg); }
+            50% { transform: translate(5px, -5px) rotate(1.5deg); }
+            55% { transform: translate(-4px, 4px) rotate(-1.5deg); }
+            60% { transform: translate(4px, -3px) rotate(1deg); }
+            65% { transform: translate(-3px, 3px) rotate(-1deg); }
+            70% { transform: translate(3px, -2px) rotate(0.8deg); }
+            75% { transform: translate(-2px, 2px) rotate(-0.5deg); }
+            80% { transform: translate(2px, -1px) rotate(0.3deg); }
+            85% { transform: translate(-1px, 1px) rotate(-0.2deg); }
+            90% { transform: translate(1px, -1px) rotate(0.1deg); }
+            95% { transform: translate(-0.5px, 0.5px) rotate(-0.05deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .shaking {
+            animation: shake 1.2s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+
+        .instruction {
+            color: #e94560;
+            margin-top: 30px;
+            font-size: 1.1rem;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <h1>Magic 8-Ball</h1>
+    
+    <div class="ball-container" id="ballContainer" onclick="shakeBall()">
+        <div class="ball" id="ball">
+            <div class="window">
+                <div class="triangle-container">
+                    <div class="triangle"></div>
+                </div>
+                <div class="content-container">
+                    <span class="eight" id="eight">8</span>
+                    <span class="answer" id="answer"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <p class="instruction">Click the ball to reveal your fortune!</p>
+
+    <script>
+        const answers = [
+            'It is certain',
+            'It is decidedly so',
+            'Yes',
+            'Reply hazy try again',
+            'Ask again later',
+            'Concentrate and ask again',
+            'My reply is no',
+            'Outlook not so good',
+            'Very doubtful'
+        ];
+
+        let isShaking = false;
+
+        function shakeBall() {
+            if (isShaking) return;
+            
+            isShaking = true;
+            const ball = document.getElementById('ball');
+            const eight = document.getElementById('eight');
+            const answer = document.getElementById('answer');
+            
+            // Immediately hide answer and show 8 before shaking (no transition)
+            answer.style.transition = 'none';
+            answer.classList.remove('visible');
+            answer.style.opacity = '0';
+            answer.style.visibility = 'hidden';
+            
+            eight.style.transition = 'none';
+            eight.classList.remove('hidden');
+            eight.style.opacity = '1';
+            eight.style.visibility = 'visible';
+            
+            // Force reflow to apply immediate changes
+            void ball.offsetWidth;
+            
+            // Start shaking
+            ball.classList.add('shaking');
+            
+            // After shake animation completes
+            setTimeout(() => {
+                ball.classList.remove('shaking');
+                
+                // Re-enable transition for 8, then hide it
+                eight.style.transition = 'opacity 0.3s ease';
+                eight.style.opacity = '0';
+                
+                // Wait for 8 to fade out, then show answer
+                setTimeout(() => {
+                    eight.style.visibility = 'hidden';
+                    
+                    // Get random answer
+                    const randomIndex = Math.floor(Math.random() * answers.length);
+                    answer.textContent = answers[randomIndex];
+                    
+                    // Re-enable transition and show answer
+                    answer.style.transition = 'opacity 0.4s ease';
+                    answer.style.visibility = 'visible';
+                    answer.style.opacity = '1';
+                    answer.classList.add('visible');
+                    
+                    // Reset back to 8 after displaying answer
+                    setTimeout(() => {
+                        answer.style.transition = 'opacity 0.4s ease';
+                        answer.style.opacity = '0';
+                        
+                        // Wait for answer to fade out before showing 8
+                        setTimeout(() => {
+                            answer.style.visibility = 'hidden';
+                            answer.classList.remove('visible');
+                            
+                            eight.style.transition = 'opacity 0.3s ease';
+                            eight.style.visibility = 'visible';
+                            eight.style.opacity = '1';
+                            eight.classList.remove('hidden');
+                            
+                            isShaking = false;
+                        }, 400);
+                    }, 3000);
+                    
+                }, 350);
+                
+            }, 1200);
+        }
+
+        // Create starry background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 2 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        createStars();
+    </script>
+</body>
+</html>
